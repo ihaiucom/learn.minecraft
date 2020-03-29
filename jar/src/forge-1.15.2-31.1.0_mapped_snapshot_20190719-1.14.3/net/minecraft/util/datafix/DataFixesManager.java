@@ -1,0 +1,484 @@
+package net.minecraft.util.datafix;
+
+import com.google.common.collect.ImmutableMap;
+import com.mojang.datafixers.DSL;
+import com.mojang.datafixers.DataFixer;
+import com.mojang.datafixers.DataFixerBuilder;
+import com.mojang.datafixers.Typed;
+import com.mojang.datafixers.schemas.Schema;
+import java.util.Objects;
+import java.util.function.BiFunction;
+import net.minecraft.util.SharedConstants;
+import net.minecraft.util.Util;
+import net.minecraft.util.datafix.fixes.AddBedTileEntity;
+import net.minecraft.util.datafix.fixes.AddNewChoices;
+import net.minecraft.util.datafix.fixes.AdvancementRenamer;
+import net.minecraft.util.datafix.fixes.AdvancementRenamer1501;
+import net.minecraft.util.datafix.fixes.ArmorStandSilent;
+import net.minecraft.util.datafix.fixes.BannerItemColor;
+import net.minecraft.util.datafix.fixes.BedItemColor;
+import net.minecraft.util.datafix.fixes.BiomeIdFix;
+import net.minecraft.util.datafix.fixes.BiomeRenames;
+import net.minecraft.util.datafix.fixes.BlockEntityBannerColor;
+import net.minecraft.util.datafix.fixes.BlockEntityKeepPacked;
+import net.minecraft.util.datafix.fixes.BlockNameFlattening;
+import net.minecraft.util.datafix.fixes.BlockRename;
+import net.minecraft.util.datafix.fixes.BlockStateFlattenGenOptions;
+import net.minecraft.util.datafix.fixes.BlockStateFlattenStructures;
+import net.minecraft.util.datafix.fixes.BlockStateFlattenVillageCrops;
+import net.minecraft.util.datafix.fixes.BlockStateFlatternEntities;
+import net.minecraft.util.datafix.fixes.BookPagesStrictJSON;
+import net.minecraft.util.datafix.fixes.CatTypeFix;
+import net.minecraft.util.datafix.fixes.ChunkGenStatus;
+import net.minecraft.util.datafix.fixes.ChunkLightRemoveFix;
+import net.minecraft.util.datafix.fixes.ChunkPaletteFormat;
+import net.minecraft.util.datafix.fixes.ChunkStatusFix;
+import net.minecraft.util.datafix.fixes.ChunkStatusFix2;
+import net.minecraft.util.datafix.fixes.ChunkStructuresTemplateRenameFix;
+import net.minecraft.util.datafix.fixes.ColorlessShulkerEntityFix;
+import net.minecraft.util.datafix.fixes.CoralFansRenameList;
+import net.minecraft.util.datafix.fixes.CustomNameStringToComponentEntity;
+import net.minecraft.util.datafix.fixes.CustomNameStringToComponentFixTileEntity;
+import net.minecraft.util.datafix.fixes.CustomNameStringToComponentItem;
+import net.minecraft.util.datafix.fixes.DyeRenameMap;
+import net.minecraft.util.datafix.fixes.ElderGuardianSplit;
+import net.minecraft.util.datafix.fixes.EntityArmorAndHeld;
+import net.minecraft.util.datafix.fixes.EntityCatSplitFix;
+import net.minecraft.util.datafix.fixes.EntityCodSalmonFix;
+import net.minecraft.util.datafix.fixes.EntityHealth;
+import net.minecraft.util.datafix.fixes.EntityId;
+import net.minecraft.util.datafix.fixes.EntityItemFrameFacing;
+import net.minecraft.util.datafix.fixes.EntityRavagerRenameFix;
+import net.minecraft.util.datafix.fixes.EntityRenaming1510;
+import net.minecraft.util.datafix.fixes.ForceVBOOn;
+import net.minecraft.util.datafix.fixes.HeightmapRenamingFix;
+import net.minecraft.util.datafix.fixes.HorseSaddle;
+import net.minecraft.util.datafix.fixes.HorseSplit;
+import net.minecraft.util.datafix.fixes.IglooMetadataRemoval;
+import net.minecraft.util.datafix.fixes.ItemFilledMapMetadata;
+import net.minecraft.util.datafix.fixes.ItemIntIDToString;
+import net.minecraft.util.datafix.fixes.ItemLoreComponentizeFix;
+import net.minecraft.util.datafix.fixes.ItemRename;
+import net.minecraft.util.datafix.fixes.ItemSpawnEggSplit;
+import net.minecraft.util.datafix.fixes.ItemStackDataFlattening;
+import net.minecraft.util.datafix.fixes.ItemStackEnchantmentFix;
+import net.minecraft.util.datafix.fixes.JukeboxRecordItem;
+import net.minecraft.util.datafix.fixes.KeyOptionsTranslation;
+import net.minecraft.util.datafix.fixes.LWJGL3KeyOptions;
+import net.minecraft.util.datafix.fixes.LeavesFix;
+import net.minecraft.util.datafix.fixes.LevelDataGeneratorOptionsFix;
+import net.minecraft.util.datafix.fixes.MapIdFix;
+import net.minecraft.util.datafix.fixes.MinecartEntityTypes;
+import net.minecraft.util.datafix.fixes.NamedEntityFix;
+import net.minecraft.util.datafix.fixes.NewVillageFix;
+import net.minecraft.util.datafix.fixes.ObjectiveDisplayName;
+import net.minecraft.util.datafix.fixes.ObjectiveRenderType;
+import net.minecraft.util.datafix.fixes.OminousBannerRenameFix;
+import net.minecraft.util.datafix.fixes.OminousBannerTileEntityRenameFix;
+import net.minecraft.util.datafix.fixes.OptionsAddTextBackgroundFix;
+import net.minecraft.util.datafix.fixes.OptionsLowerCaseLanguage;
+import net.minecraft.util.datafix.fixes.PaintingDirection;
+import net.minecraft.util.datafix.fixes.PaintingMotive;
+import net.minecraft.util.datafix.fixes.PistonPushedBlock;
+import net.minecraft.util.datafix.fixes.PointOfInterestRebuild;
+import net.minecraft.util.datafix.fixes.PointOfInterestReorganizationFix;
+import net.minecraft.util.datafix.fixes.PotionItems;
+import net.minecraft.util.datafix.fixes.PotionWater;
+import net.minecraft.util.datafix.fixes.PufferfishRename;
+import net.minecraft.util.datafix.fixes.RecipeRenamer;
+import net.minecraft.util.datafix.fixes.RecipeRenamer1502;
+import net.minecraft.util.datafix.fixes.RecipeRenamer1510;
+import net.minecraft.util.datafix.fixes.RedundantChanceTags;
+import net.minecraft.util.datafix.fixes.RenameBeehivePointOfInterest;
+import net.minecraft.util.datafix.fixes.RenamedCoral;
+import net.minecraft.util.datafix.fixes.RidingToPassengers;
+import net.minecraft.util.datafix.fixes.ShulkerBoxEntityColor;
+import net.minecraft.util.datafix.fixes.ShulkerBoxItemColor;
+import net.minecraft.util.datafix.fixes.ShulkerBoxTileColor;
+import net.minecraft.util.datafix.fixes.SignStrictJSON;
+import net.minecraft.util.datafix.fixes.SkeletonSplit;
+import net.minecraft.util.datafix.fixes.SpawnEggNames;
+import net.minecraft.util.datafix.fixes.SpawnerEntityTypes;
+import net.minecraft.util.datafix.fixes.StatsRenaming;
+import net.minecraft.util.datafix.fixes.StringToUUID;
+import net.minecraft.util.datafix.fixes.StructureReferenceFix;
+import net.minecraft.util.datafix.fixes.SwimStatsRename;
+import net.minecraft.util.datafix.fixes.TeamDisplayName;
+import net.minecraft.util.datafix.fixes.TileEntityId;
+import net.minecraft.util.datafix.fixes.TippedArrow;
+import net.minecraft.util.datafix.fixes.TrappedChestTileEntitySplit;
+import net.minecraft.util.datafix.fixes.VillagerLevelAndXpFix;
+import net.minecraft.util.datafix.fixes.VillagerProfessionFix;
+import net.minecraft.util.datafix.fixes.VillagerTrades;
+import net.minecraft.util.datafix.fixes.WolfCollarColor;
+import net.minecraft.util.datafix.fixes.ZombieProfToType;
+import net.minecraft.util.datafix.fixes.ZombieSplit;
+import net.minecraft.util.datafix.fixes.ZombieVillagerXpFix;
+import net.minecraft.util.datafix.versions.V0099;
+import net.minecraft.util.datafix.versions.V0100;
+import net.minecraft.util.datafix.versions.V0102;
+import net.minecraft.util.datafix.versions.V0106;
+import net.minecraft.util.datafix.versions.V0107;
+import net.minecraft.util.datafix.versions.V0135;
+import net.minecraft.util.datafix.versions.V0143;
+import net.minecraft.util.datafix.versions.V0501;
+import net.minecraft.util.datafix.versions.V0700;
+import net.minecraft.util.datafix.versions.V0701;
+import net.minecraft.util.datafix.versions.V0702;
+import net.minecraft.util.datafix.versions.V0703;
+import net.minecraft.util.datafix.versions.V0704;
+import net.minecraft.util.datafix.versions.V0705;
+import net.minecraft.util.datafix.versions.V0808;
+import net.minecraft.util.datafix.versions.V1022;
+import net.minecraft.util.datafix.versions.V1125;
+import net.minecraft.util.datafix.versions.V1451;
+import net.minecraft.util.datafix.versions.V1451_1;
+import net.minecraft.util.datafix.versions.V1451_2;
+import net.minecraft.util.datafix.versions.V1451_3;
+import net.minecraft.util.datafix.versions.V1451_4;
+import net.minecraft.util.datafix.versions.V1451_5;
+import net.minecraft.util.datafix.versions.V1451_6;
+import net.minecraft.util.datafix.versions.V1451_7;
+import net.minecraft.util.datafix.versions.V1460;
+import net.minecraft.util.datafix.versions.V1466;
+import net.minecraft.util.datafix.versions.V1470;
+import net.minecraft.util.datafix.versions.V1481;
+import net.minecraft.util.datafix.versions.V1483;
+import net.minecraft.util.datafix.versions.V1486;
+import net.minecraft.util.datafix.versions.V1510;
+import net.minecraft.util.datafix.versions.V1800;
+import net.minecraft.util.datafix.versions.V1801;
+import net.minecraft.util.datafix.versions.V1904;
+import net.minecraft.util.datafix.versions.V1906;
+import net.minecraft.util.datafix.versions.V1909;
+import net.minecraft.util.datafix.versions.V1920;
+import net.minecraft.util.datafix.versions.V1928;
+import net.minecraft.util.datafix.versions.V1929;
+import net.minecraft.util.datafix.versions.V1931;
+import net.minecraft.util.datafix.versions.V2100;
+
+public class DataFixesManager {
+   private static final BiFunction<Integer, Schema, Schema> SCHEMA_FACTORY = Schema::new;
+   private static final BiFunction<Integer, Schema, Schema> NAMESPACED_SCHEMA_FACTORY = NamespacedSchema::new;
+   private static final DataFixer DATA_FIXER = createFixer();
+
+   private static DataFixer createFixer() {
+      DataFixerBuilder lvt_0_1_ = new DataFixerBuilder(SharedConstants.getVersion().getWorldVersion());
+      addFixers(lvt_0_1_);
+      return lvt_0_1_.build(Util.getServerExecutor());
+   }
+
+   public static DataFixer getDataFixer() {
+      return DATA_FIXER;
+   }
+
+   private static void addFixers(DataFixerBuilder p_210891_0_) {
+      Schema lvt_1_1_ = p_210891_0_.addSchema(99, V0099::new);
+      Schema lvt_2_1_ = p_210891_0_.addSchema(100, V0100::new);
+      p_210891_0_.addFixer(new EntityArmorAndHeld(lvt_2_1_, true));
+      Schema lvt_3_1_ = p_210891_0_.addSchema(101, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new SignStrictJSON(lvt_3_1_, false));
+      Schema lvt_4_1_ = p_210891_0_.addSchema(102, V0102::new);
+      p_210891_0_.addFixer(new ItemIntIDToString(lvt_4_1_, true));
+      p_210891_0_.addFixer(new PotionItems(lvt_4_1_, false));
+      Schema lvt_5_1_ = p_210891_0_.addSchema(105, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new SpawnEggNames(lvt_5_1_, true));
+      Schema lvt_6_1_ = p_210891_0_.addSchema(106, V0106::new);
+      p_210891_0_.addFixer(new SpawnerEntityTypes(lvt_6_1_, true));
+      Schema lvt_7_1_ = p_210891_0_.addSchema(107, V0107::new);
+      p_210891_0_.addFixer(new MinecartEntityTypes(lvt_7_1_, true));
+      Schema lvt_8_1_ = p_210891_0_.addSchema(108, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new StringToUUID(lvt_8_1_, true));
+      Schema lvt_9_1_ = p_210891_0_.addSchema(109, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new EntityHealth(lvt_9_1_, true));
+      Schema lvt_10_1_ = p_210891_0_.addSchema(110, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new HorseSaddle(lvt_10_1_, true));
+      Schema lvt_11_1_ = p_210891_0_.addSchema(111, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new PaintingDirection(lvt_11_1_, true));
+      Schema lvt_12_1_ = p_210891_0_.addSchema(113, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new RedundantChanceTags(lvt_12_1_, true));
+      Schema lvt_13_1_ = p_210891_0_.addSchema(135, V0135::new);
+      p_210891_0_.addFixer(new RidingToPassengers(lvt_13_1_, true));
+      Schema lvt_14_1_ = p_210891_0_.addSchema(143, V0143::new);
+      p_210891_0_.addFixer(new TippedArrow(lvt_14_1_, true));
+      Schema lvt_15_1_ = p_210891_0_.addSchema(147, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ArmorStandSilent(lvt_15_1_, true));
+      Schema lvt_16_1_ = p_210891_0_.addSchema(165, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BookPagesStrictJSON(lvt_16_1_, true));
+      Schema lvt_17_1_ = p_210891_0_.addSchema(501, V0501::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_17_1_, "Add 1.10 entities fix", TypeReferences.ENTITY));
+      Schema lvt_18_1_ = p_210891_0_.addSchema(502, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(ItemRename.create(lvt_18_1_, "cooked_fished item renamer", (p_207111_0_) -> {
+         return Objects.equals(NamespacedSchema.ensureNamespaced(p_207111_0_), "minecraft:cooked_fished") ? "minecraft:cooked_fish" : p_207111_0_;
+      }));
+      p_210891_0_.addFixer(new ZombieProfToType(lvt_18_1_, false));
+      Schema lvt_19_1_ = p_210891_0_.addSchema(505, SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ForceVBOOn(lvt_19_1_, false));
+      Schema lvt_20_1_ = p_210891_0_.addSchema(700, V0700::new);
+      p_210891_0_.addFixer(new ElderGuardianSplit(lvt_20_1_, true));
+      Schema lvt_21_1_ = p_210891_0_.addSchema(701, V0701::new);
+      p_210891_0_.addFixer(new SkeletonSplit(lvt_21_1_, true));
+      Schema lvt_22_1_ = p_210891_0_.addSchema(702, V0702::new);
+      p_210891_0_.addFixer(new ZombieSplit(lvt_22_1_, true));
+      Schema lvt_23_1_ = p_210891_0_.addSchema(703, V0703::new);
+      p_210891_0_.addFixer(new HorseSplit(lvt_23_1_, true));
+      Schema lvt_24_1_ = p_210891_0_.addSchema(704, V0704::new);
+      p_210891_0_.addFixer(new TileEntityId(lvt_24_1_, true));
+      Schema lvt_25_1_ = p_210891_0_.addSchema(705, V0705::new);
+      p_210891_0_.addFixer(new EntityId(lvt_25_1_, true));
+      Schema lvt_26_1_ = p_210891_0_.addSchema(804, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BannerItemColor(lvt_26_1_, true));
+      Schema lvt_27_1_ = p_210891_0_.addSchema(806, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new PotionWater(lvt_27_1_, false));
+      Schema lvt_28_1_ = p_210891_0_.addSchema(808, V0808::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_28_1_, "added shulker box", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_29_1_ = p_210891_0_.addSchema(808, 1, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ShulkerBoxEntityColor(lvt_29_1_, false));
+      Schema lvt_30_1_ = p_210891_0_.addSchema(813, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ShulkerBoxItemColor(lvt_30_1_, false));
+      p_210891_0_.addFixer(new ShulkerBoxTileColor(lvt_30_1_, false));
+      Schema lvt_31_1_ = p_210891_0_.addSchema(816, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new OptionsLowerCaseLanguage(lvt_31_1_, false));
+      Schema lvt_32_1_ = p_210891_0_.addSchema(820, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(ItemRename.create(lvt_32_1_, "totem item renamer", (p_207107_0_) -> {
+         return Objects.equals(p_207107_0_, "minecraft:totem") ? "minecraft:totem_of_undying" : p_207107_0_;
+      }));
+      Schema lvt_33_1_ = p_210891_0_.addSchema(1022, V1022::new);
+      p_210891_0_.addFixer(new WriteAndReadDataFix(lvt_33_1_, "added shoulder entities to players", TypeReferences.PLAYER));
+      Schema lvt_34_1_ = p_210891_0_.addSchema(1125, V1125::new);
+      p_210891_0_.addFixer(new AddBedTileEntity(lvt_34_1_, true));
+      p_210891_0_.addFixer(new BedItemColor(lvt_34_1_, false));
+      Schema lvt_35_1_ = p_210891_0_.addSchema(1344, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new LWJGL3KeyOptions(lvt_35_1_, false));
+      Schema lvt_36_1_ = p_210891_0_.addSchema(1446, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new KeyOptionsTranslation(lvt_36_1_, false));
+      Schema lvt_37_1_ = p_210891_0_.addSchema(1450, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BlockStateFlattenStructures(lvt_37_1_, false));
+      Schema lvt_38_1_ = p_210891_0_.addSchema(1451, V1451::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_38_1_, "AddTrappedChestFix", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_39_1_ = p_210891_0_.addSchema(1451, 1, V1451_1::new);
+      p_210891_0_.addFixer(new ChunkPaletteFormat(lvt_39_1_, true));
+      Schema lvt_40_1_ = p_210891_0_.addSchema(1451, 2, V1451_2::new);
+      p_210891_0_.addFixer(new PistonPushedBlock(lvt_40_1_, true));
+      Schema lvt_41_1_ = p_210891_0_.addSchema(1451, 3, V1451_3::new);
+      p_210891_0_.addFixer(new BlockStateFlatternEntities(lvt_41_1_, true));
+      p_210891_0_.addFixer(new ItemFilledMapMetadata(lvt_41_1_, false));
+      Schema lvt_42_1_ = p_210891_0_.addSchema(1451, 4, V1451_4::new);
+      p_210891_0_.addFixer(new BlockNameFlattening(lvt_42_1_, true));
+      p_210891_0_.addFixer(new ItemStackDataFlattening(lvt_42_1_, false));
+      Schema lvt_43_1_ = p_210891_0_.addSchema(1451, 5, V1451_5::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_43_1_, "RemoveNoteBlockFlowerPotFix", TypeReferences.BLOCK_ENTITY));
+      p_210891_0_.addFixer(new ItemSpawnEggSplit(lvt_43_1_, false));
+      p_210891_0_.addFixer(new WolfCollarColor(lvt_43_1_, false));
+      p_210891_0_.addFixer(new BlockEntityBannerColor(lvt_43_1_, false));
+      p_210891_0_.addFixer(new BlockStateFlattenGenOptions(lvt_43_1_, false));
+      Schema lvt_44_1_ = p_210891_0_.addSchema(1451, 6, V1451_6::new);
+      p_210891_0_.addFixer(new StatsRenaming(lvt_44_1_, true));
+      p_210891_0_.addFixer(new JukeboxRecordItem(lvt_44_1_, false));
+      Schema lvt_45_1_ = p_210891_0_.addSchema(1451, 7, V1451_7::new);
+      p_210891_0_.addFixer(new BlockStateFlattenVillageCrops(lvt_45_1_, true));
+      Schema lvt_46_1_ = p_210891_0_.addSchema(1451, 7, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new VillagerTrades(lvt_46_1_, false));
+      Schema lvt_47_1_ = p_210891_0_.addSchema(1456, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new EntityItemFrameFacing(lvt_47_1_, false));
+      Schema lvt_48_1_ = p_210891_0_.addSchema(1458, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new CustomNameStringToComponentEntity(lvt_48_1_, false));
+      p_210891_0_.addFixer(new CustomNameStringToComponentItem(lvt_48_1_, false));
+      p_210891_0_.addFixer(new CustomNameStringToComponentFixTileEntity(lvt_48_1_, false));
+      Schema lvt_49_1_ = p_210891_0_.addSchema(1460, V1460::new);
+      p_210891_0_.addFixer(new PaintingMotive(lvt_49_1_, false));
+      Schema lvt_50_1_ = p_210891_0_.addSchema(1466, V1466::new);
+      p_210891_0_.addFixer(new ChunkGenStatus(lvt_50_1_, true));
+      Schema lvt_51_1_ = p_210891_0_.addSchema(1470, V1470::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_51_1_, "Add 1.13 entities fix", TypeReferences.ENTITY));
+      Schema lvt_52_1_ = p_210891_0_.addSchema(1474, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ColorlessShulkerEntityFix(lvt_52_1_, false));
+      p_210891_0_.addFixer(BlockRename.create(lvt_52_1_, "Colorless shulker block fixer", (p_207106_0_) -> {
+         return Objects.equals(NamespacedSchema.ensureNamespaced(p_207106_0_), "minecraft:purple_shulker_box") ? "minecraft:shulker_box" : p_207106_0_;
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_52_1_, "Colorless shulker item fixer", (p_207101_0_) -> {
+         return Objects.equals(NamespacedSchema.ensureNamespaced(p_207101_0_), "minecraft:purple_shulker_box") ? "minecraft:shulker_box" : p_207101_0_;
+      }));
+      Schema lvt_53_1_ = p_210891_0_.addSchema(1475, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_53_1_, "Flowing fixer", (p_207100_0_) -> {
+         return (String)ImmutableMap.of("minecraft:flowing_water", "minecraft:water", "minecraft:flowing_lava", "minecraft:lava").getOrDefault(p_207100_0_, p_207100_0_);
+      }));
+      Schema lvt_54_1_ = p_210891_0_.addSchema(1480, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_54_1_, "Rename coral blocks", (p_207104_0_) -> {
+         return (String)RenamedCoral.field_204918_a.getOrDefault(p_207104_0_, p_207104_0_);
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_54_1_, "Rename coral items", (p_207103_0_) -> {
+         return (String)RenamedCoral.field_204918_a.getOrDefault(p_207103_0_, p_207103_0_);
+      }));
+      Schema lvt_55_1_ = p_210891_0_.addSchema(1481, V1481::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_55_1_, "Add conduit", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_56_1_ = p_210891_0_.addSchema(1483, V1483::new);
+      p_210891_0_.addFixer(new PufferfishRename(lvt_56_1_, true));
+      p_210891_0_.addFixer(ItemRename.create(lvt_56_1_, "Rename pufferfish egg item", (p_207552_0_) -> {
+         return (String)PufferfishRename.field_207461_a.getOrDefault(p_207552_0_, p_207552_0_);
+      }));
+      Schema lvt_57_1_ = p_210891_0_.addSchema(1484, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(ItemRename.create(lvt_57_1_, "Rename seagrass items", (p_209172_0_) -> {
+         return (String)ImmutableMap.of("minecraft:sea_grass", "minecraft:seagrass", "minecraft:tall_sea_grass", "minecraft:tall_seagrass").getOrDefault(p_209172_0_, p_209172_0_);
+      }));
+      p_210891_0_.addFixer(BlockRename.create(lvt_57_1_, "Rename seagrass blocks", (p_209168_0_) -> {
+         return (String)ImmutableMap.of("minecraft:sea_grass", "minecraft:seagrass", "minecraft:tall_sea_grass", "minecraft:tall_seagrass").getOrDefault(p_209168_0_, p_209168_0_);
+      }));
+      p_210891_0_.addFixer(new HeightmapRenamingFix(lvt_57_1_, false));
+      Schema lvt_58_1_ = p_210891_0_.addSchema(1486, V1486::new);
+      p_210891_0_.addFixer(new EntityCodSalmonFix(lvt_58_1_, true));
+      p_210891_0_.addFixer(ItemRename.create(lvt_58_1_, "Rename cod/salmon egg items", (p_207551_0_) -> {
+         return (String)EntityCodSalmonFix.field_209759_b.getOrDefault(p_207551_0_, p_207551_0_);
+      }));
+      Schema lvt_59_1_ = p_210891_0_.addSchema(1487, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(ItemRename.create(lvt_59_1_, "Rename prismarine_brick(s)_* blocks", (p_207547_0_) -> {
+         return (String)ImmutableMap.of("minecraft:prismarine_bricks_slab", "minecraft:prismarine_brick_slab", "minecraft:prismarine_bricks_stairs", "minecraft:prismarine_brick_stairs").getOrDefault(p_207547_0_, p_207547_0_);
+      }));
+      p_210891_0_.addFixer(BlockRename.create(lvt_59_1_, "Rename prismarine_brick(s)_* items", (p_207546_0_) -> {
+         return (String)ImmutableMap.of("minecraft:prismarine_bricks_slab", "minecraft:prismarine_brick_slab", "minecraft:prismarine_bricks_stairs", "minecraft:prismarine_brick_stairs").getOrDefault(p_207546_0_, p_207546_0_);
+      }));
+      Schema lvt_60_1_ = p_210891_0_.addSchema(1488, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_60_1_, "Rename kelp/kelptop", (p_207549_0_) -> {
+         return (String)ImmutableMap.of("minecraft:kelp_top", "minecraft:kelp", "minecraft:kelp", "minecraft:kelp_plant").getOrDefault(p_207549_0_, p_207549_0_);
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_60_1_, "Rename kelptop", (p_207548_0_) -> {
+         return Objects.equals(p_207548_0_, "minecraft:kelp_top") ? "minecraft:kelp" : p_207548_0_;
+      }));
+      p_210891_0_.addFixer(new NamedEntityFix(lvt_60_1_, false, "Command block block entity custom name fix", TypeReferences.BLOCK_ENTITY, "minecraft:command_block") {
+         protected Typed<?> fix(Typed<?> p_207419_1_) {
+            return p_207419_1_.update(DSL.remainderFinder(), CustomNameStringToComponentEntity::fixTagCustomName);
+         }
+      });
+      p_210891_0_.addFixer(new NamedEntityFix(lvt_60_1_, false, "Command block minecart custom name fix", TypeReferences.ENTITY, "minecraft:commandblock_minecart") {
+         protected Typed<?> fix(Typed<?> p_207419_1_) {
+            return p_207419_1_.update(DSL.remainderFinder(), CustomNameStringToComponentEntity::fixTagCustomName);
+         }
+      });
+      p_210891_0_.addFixer(new IglooMetadataRemoval(lvt_60_1_, false));
+      Schema lvt_61_1_ = p_210891_0_.addSchema(1490, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_61_1_, "Rename melon_block", (p_207808_0_) -> {
+         return Objects.equals(p_207808_0_, "minecraft:melon_block") ? "minecraft:melon" : p_207808_0_;
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_61_1_, "Rename melon_block/melon/speckled_melon", (p_207807_0_) -> {
+         return (String)ImmutableMap.of("minecraft:melon_block", "minecraft:melon", "minecraft:melon", "minecraft:melon_slice", "minecraft:speckled_melon", "minecraft:glistering_melon_slice").getOrDefault(p_207807_0_, p_207807_0_);
+      }));
+      Schema lvt_62_1_ = p_210891_0_.addSchema(1492, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ChunkStructuresTemplateRenameFix(lvt_62_1_, false));
+      Schema lvt_63_1_ = p_210891_0_.addSchema(1494, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ItemStackEnchantmentFix(lvt_63_1_, false));
+      Schema lvt_64_1_ = p_210891_0_.addSchema(1496, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new LeavesFix(lvt_64_1_, false));
+      Schema lvt_65_1_ = p_210891_0_.addSchema(1500, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BlockEntityKeepPacked(lvt_65_1_, false));
+      Schema lvt_66_1_ = p_210891_0_.addSchema(1501, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new AdvancementRenamer1501(lvt_66_1_, false));
+      Schema lvt_67_1_ = p_210891_0_.addSchema(1502, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new RecipeRenamer1502(lvt_67_1_, false));
+      Schema lvt_68_1_ = p_210891_0_.addSchema(1506, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new LevelDataGeneratorOptionsFix(lvt_68_1_, false));
+      Schema lvt_69_1_ = p_210891_0_.addSchema(1508, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BiomeRenames(lvt_69_1_, false));
+      Schema lvt_70_1_ = p_210891_0_.addSchema(1510, V1510::new);
+      p_210891_0_.addFixer(BlockRename.create(lvt_70_1_, "Block renamening fix", (p_209169_0_) -> {
+         return (String)EntityRenaming1510.BLOCK_RENAME_MAP.getOrDefault(p_209169_0_, p_209169_0_);
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_70_1_, "Item renamening fix", (p_210900_0_) -> {
+         return (String)EntityRenaming1510.ITEM_RENAME_MAP.getOrDefault(p_210900_0_, p_210900_0_);
+      }));
+      p_210891_0_.addFixer(new RecipeRenamer1510(lvt_70_1_, false));
+      p_210891_0_.addFixer(new EntityRenaming1510(lvt_70_1_, true));
+      p_210891_0_.addFixer(new SwimStatsRename(lvt_70_1_, false));
+      Schema lvt_71_1_ = p_210891_0_.addSchema(1514, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ObjectiveDisplayName(lvt_71_1_, false));
+      p_210891_0_.addFixer(new TeamDisplayName(lvt_71_1_, false));
+      p_210891_0_.addFixer(new ObjectiveRenderType(lvt_71_1_, false));
+      Schema lvt_72_1_ = p_210891_0_.addSchema(1515, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_72_1_, "Rename coral fan blocks", (p_211924_0_) -> {
+         return (String)CoralFansRenameList.field_211870_a.getOrDefault(p_211924_0_, p_211924_0_);
+      }));
+      Schema lvt_73_1_ = p_210891_0_.addSchema(1624, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new TrappedChestTileEntitySplit(lvt_73_1_, false));
+      Schema lvt_74_1_ = p_210891_0_.addSchema(1800, V1800::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_74_1_, "Added 1.14 mobs fix", TypeReferences.ENTITY));
+      p_210891_0_.addFixer(ItemRename.create(lvt_74_1_, "Rename dye items", (p_219813_0_) -> {
+         return (String)DyeRenameMap.field_219828_a.getOrDefault(p_219813_0_, p_219813_0_);
+      }));
+      Schema lvt_75_1_ = p_210891_0_.addSchema(1801, V1801::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_75_1_, "Added Illager Beast", TypeReferences.ENTITY));
+      Schema lvt_76_1_ = p_210891_0_.addSchema(1802, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(BlockRename.create(lvt_76_1_, "Rename sign blocks & stone slabs", (p_219812_0_) -> {
+         return (String)ImmutableMap.of("minecraft:stone_slab", "minecraft:smooth_stone_slab", "minecraft:sign", "minecraft:oak_sign", "minecraft:wall_sign", "minecraft:oak_wall_sign").getOrDefault(p_219812_0_, p_219812_0_);
+      }));
+      p_210891_0_.addFixer(ItemRename.create(lvt_76_1_, "Rename sign item & stone slabs", (p_219815_0_) -> {
+         return (String)ImmutableMap.of("minecraft:stone_slab", "minecraft:smooth_stone_slab", "minecraft:sign", "minecraft:oak_sign").getOrDefault(p_219815_0_, p_219815_0_);
+      }));
+      Schema lvt_77_1_ = p_210891_0_.addSchema(1803, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ItemLoreComponentizeFix(lvt_77_1_, false));
+      Schema lvt_78_1_ = p_210891_0_.addSchema(1904, V1904::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_78_1_, "Added Cats", TypeReferences.ENTITY));
+      p_210891_0_.addFixer(new EntityCatSplitFix(lvt_78_1_, false));
+      Schema lvt_79_1_ = p_210891_0_.addSchema(1905, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ChunkStatusFix(lvt_79_1_, false));
+      Schema lvt_80_1_ = p_210891_0_.addSchema(1906, V1906::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_80_1_, "Add POI Blocks", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_81_1_ = p_210891_0_.addSchema(1909, V1909::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_81_1_, "Add jigsaw", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_82_1_ = p_210891_0_.addSchema(1911, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ChunkStatusFix2(lvt_82_1_, false));
+      Schema lvt_83_1_ = p_210891_0_.addSchema(1917, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new CatTypeFix(lvt_83_1_, false));
+      Schema lvt_84_1_ = p_210891_0_.addSchema(1918, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new VillagerProfessionFix(lvt_84_1_, "minecraft:villager"));
+      p_210891_0_.addFixer(new VillagerProfessionFix(lvt_84_1_, "minecraft:zombie_villager"));
+      Schema lvt_85_1_ = p_210891_0_.addSchema(1920, V1920::new);
+      p_210891_0_.addFixer(new NewVillageFix(lvt_85_1_, false));
+      p_210891_0_.addFixer(new AddNewChoices(lvt_85_1_, "Add campfire", TypeReferences.BLOCK_ENTITY));
+      Schema lvt_86_1_ = p_210891_0_.addSchema(1925, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new MapIdFix(lvt_86_1_, false));
+      Schema lvt_87_1_ = p_210891_0_.addSchema(1928, V1928::new);
+      p_210891_0_.addFixer(new EntityRavagerRenameFix(lvt_87_1_, true));
+      p_210891_0_.addFixer(ItemRename.create(lvt_87_1_, "Rename ravager egg item", (p_219814_0_) -> {
+         return (String)EntityRavagerRenameFix.field_219829_a.getOrDefault(p_219814_0_, p_219814_0_);
+      }));
+      Schema lvt_88_1_ = p_210891_0_.addSchema(1929, V1929::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_88_1_, "Add Wandering Trader and Trader Llama", TypeReferences.ENTITY));
+      Schema lvt_89_1_ = p_210891_0_.addSchema(1931, V1931::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_89_1_, "Added Fox", TypeReferences.ENTITY));
+      Schema lvt_90_1_ = p_210891_0_.addSchema(1936, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new OptionsAddTextBackgroundFix(lvt_90_1_, false));
+      Schema lvt_91_1_ = p_210891_0_.addSchema(1946, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new PointOfInterestReorganizationFix(lvt_91_1_, false));
+      Schema lvt_92_1_ = p_210891_0_.addSchema(1948, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new OminousBannerRenameFix(lvt_92_1_, false));
+      Schema lvt_93_1_ = p_210891_0_.addSchema(1953, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new OminousBannerTileEntityRenameFix(lvt_93_1_, false));
+      Schema lvt_94_1_ = p_210891_0_.addSchema(1955, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new VillagerLevelAndXpFix(lvt_94_1_, false));
+      p_210891_0_.addFixer(new ZombieVillagerXpFix(lvt_94_1_, false));
+      Schema lvt_95_1_ = p_210891_0_.addSchema(1961, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new ChunkLightRemoveFix(lvt_95_1_, false));
+      Schema lvt_96_1_ = p_210891_0_.addSchema(2100, V2100::new);
+      p_210891_0_.addFixer(new AddNewChoices(lvt_96_1_, "Added Bee and Bee Stinger", TypeReferences.ENTITY));
+      p_210891_0_.addFixer(new AddNewChoices(lvt_96_1_, "Add beehive", TypeReferences.BLOCK_ENTITY));
+      p_210891_0_.addFixer(new RecipeRenamer(lvt_96_1_, false, "Rename sugar recipe", (p_230063_0_) -> {
+         return "minecraft:sugar".equals(p_230063_0_) ? "sugar_from_sugar_cane" : p_230063_0_;
+      }));
+      p_210891_0_.addFixer(new AdvancementRenamer(lvt_96_1_, false, "Rename sugar recipe advancement", (p_230062_0_) -> {
+         return "minecraft:recipes/misc/sugar".equals(p_230062_0_) ? "minecraft:recipes/misc/sugar_from_sugar_cane" : p_230062_0_;
+      }));
+      Schema lvt_97_1_ = p_210891_0_.addSchema(2202, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new BiomeIdFix(lvt_97_1_, false));
+      Schema lvt_98_1_ = p_210891_0_.addSchema(2209, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(ItemRename.create(lvt_98_1_, "Rename bee_hive item to beehive", (p_226189_0_) -> {
+         return Objects.equals(p_226189_0_, "minecraft:bee_hive") ? "minecraft:beehive" : p_226189_0_;
+      }));
+      p_210891_0_.addFixer(new RenameBeehivePointOfInterest(lvt_98_1_));
+      p_210891_0_.addFixer(BlockRename.create(lvt_98_1_, "Rename bee_hive block to beehive", (p_226188_0_) -> {
+         return (String)ImmutableMap.of("minecraft:bee_hive", "minecraft:beehive").getOrDefault(p_226188_0_, p_226188_0_);
+      }));
+      Schema lvt_99_1_ = p_210891_0_.addSchema(2211, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new StructureReferenceFix(lvt_99_1_, false));
+      Schema lvt_100_1_ = p_210891_0_.addSchema(2218, NAMESPACED_SCHEMA_FACTORY);
+      p_210891_0_.addFixer(new PointOfInterestRebuild(lvt_100_1_, false));
+   }
+}

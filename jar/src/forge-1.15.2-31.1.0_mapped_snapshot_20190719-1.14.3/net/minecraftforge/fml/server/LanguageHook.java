@@ -1,0 +1,101 @@
+package net.minecraftforge.fml.server;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import net.minecraft.resources.IResource;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.JSONUtils;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.ForgeI18n;
+import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class LanguageHook {
+   private static final Logger LOGGER = LogManager.getLogger();
+   private static final Gson GSON = new Gson();
+   private static final Pattern PATTERN = Pattern.compile("%(\\d+\\$)?[\\d\\.]*[df]");
+   private static List<Map<String, String>> capturedTables = new ArrayList(2);
+   private static Map<String, String> modTable;
+
+   public static void captureLanguageMap(Map<String, String> table) {
+      capturedTables.add(table);
+      if (modTable != null) {
+         capturedTables.forEach((t) -> {
+            t.putAll(modTable);
+         });
+      }
+
+   }
+
+   private static void loadLocaleData(List<IResource> allResources) {
+      allResources.stream().map(IResource::getInputStream).forEach(LanguageHook::loadLocaleData);
+   }
+
+   private static void loadLocaleData(InputStream inputstream) {
+      try {
+         JsonElement jsonelement = (JsonElement)GSON.fromJson(new InputStreamReader(inputstream, StandardCharsets.UTF_8), JsonElement.class);
+         JsonObject jsonobject = JSONUtils.getJsonObject(jsonelement, "strings");
+         jsonobject.entrySet().forEach((entry) -> {
+            String s = PATTERN.matcher(JSONUtils.getString((JsonElement)entry.getValue(), (String)entry.getKey())).replaceAll("%$1s");
+            modTable.put(entry.getKey(), s);
+         });
+      } finally {
+         IOUtils.closeQuietly(inputstream);
+      }
+
+   }
+
+   private static void loadLanguage(String langName, MinecraftServer server) {
+      String langFile = String.format("lang/%s.json", langName);
+      server.getResourceManager().getResourceNamespaces().forEach((namespace) -> {
+         try {
+            ResourceLocation langResource = new ResourceLocation(namespace, langFile);
+            loadLocaleData(server.getResourceManager().getAllResources(langResource));
+         } catch (FileNotFoundException var4) {
+         } catch (Exception var5) {
+            LOGGER.warn("Skipped language file: {}:{}", namespace, langFile, var5);
+         }
+
+      });
+   }
+
+   public static void loadForgeAndMCLangs() {
+      modTable = new HashMap(5000);
+      InputStream mc = Thread.currentThread().getContextClassLoader().getResourceAsStream("assets/minecraft/lang/en_us.json");
+      InputStream forge = Thread.currentThread().getContextClassLoader().getResourceAsStream("assets/forge/lang/en_us.json");
+      loadLocaleData(mc);
+      loadLocaleData(forge);
+      capturedTables.forEach((t) -> {
+         t.putAll(modTable);
+      });
+      ForgeI18n.loadLanguageData(modTable);
+   }
+
+   static void loadLanguagesOnServer(MinecraftServer server) {
+      modTable = new HashMap(5000);
+      Iterator var1 = Arrays.asList("en_us").iterator();
+
+      while(var1.hasNext()) {
+         String lang = (String)var1.next();
+         loadLanguage(lang, server);
+      }
+
+      capturedTables.forEach((t) -> {
+         t.putAll(modTable);
+      });
+      ForgeI18n.loadLanguageData(modTable);
+   }
+}

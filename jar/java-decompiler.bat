@@ -1,0 +1,1 @@
+java -cp "D:\zengfeng\githubs\learn.minecraft\java-decompiler.jar" org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler -dgs=true forge-1.15.2-31.1.0_mapped_snapshot_20190719-1.14.3.jar src
